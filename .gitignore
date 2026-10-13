@@ -1,0 +1,9 @@
+# XMake
+/.xmake/
+/build/
+
+# Build output
+/bin/
+*.obj
+*.pdb
+*.ilk
