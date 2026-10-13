@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 
 namespace zoom {
 
@@ -32,17 +33,24 @@ public:
         mTargetDivisor.store(target, std::memory_order_release);
     }
 
-    // Eased divisor for this frame: drifts toward the target (or 1.0 when
-    // released) so zoom in/out glides instead of snapping. The factor is
-    // intentionally gentle; getFov runs every rendered frame.
+    // Eased divisor for this frame: glides toward the target (or 1.0
+    // when released) so zoom in/out is a slow smooth travel instead of a
+    // snap. Snaps when close so the FOV lands exactly on native/plain.
     [[nodiscard]] float currentDivisor() {
         const float goal = mZoomed.load(std::memory_order_acquire) ? mTargetDivisor.load(std::memory_order_acquire)
                                                                    : 1.0F;
         float current = mCurrentDivisor.load(std::memory_order_acquire);
-        current += (goal - current) * kEasePerFrame;
+        if (std::fabs(goal - current) < kSnapThreshold) {
+            current = goal;
+        } else {
+            current += (goal - current) * kEasePerFrame;
+        }
         if (current < 1.0F) {
             current = 1.0F;
         }
+        mCurrentDivisor.store(current, std::memory_order_release);
+        return current;
+    }
         mCurrentDivisor.store(current, std::memory_order_release);
         return current;
     }
@@ -52,10 +60,11 @@ public:
     static constexpr float kMaxDivisor     = 30.0F;
 
 private:
-    // Per-wheel-tick multiplier (fine control) and per-frame ease toward
-    // the target (buttery transitions, including the release zoom-out).
-    static constexpr float kScrollFactor = 1.12F;
-    static constexpr float kEasePerFrame = 0.18F;
+    // Per-wheel-tick multiplier (fine control), slow per-frame glide
+    // toward the target, and a snap threshold so motion always settles.
+    static constexpr float kScrollFactor  = 1.12F;
+    static constexpr float kEasePerFrame  = 0.06F;
+    static constexpr float kSnapThreshold = 0.005F;
 
 private:
     ZoomState() = default;

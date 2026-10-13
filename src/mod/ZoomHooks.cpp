@@ -24,10 +24,25 @@ namespace {
 
 constexpr float kMinSaneFov = 1.0F;
 constexpr float kMaxSaneFov = 179.0F;
-// Wheel direction convention (MouseAction::DataUp = scroll up = zoom in)
-// comes from the header enum names. If in-game testing shows inverted
-// behavior on some mouse, flip this one constant instead of touching logic.
+// Wheel direction convention: the header only names DataUp/DataDown, but
+// the live event may carry direction as the signed dy motion, as the data
+// flag, or as a signed data magnitude. wheelScrolledDown() accepts all
+// three (dy first, then flag, then signed data) so one unknown encoding
+// cannot wedge the zoom at an endpoint. If in-game testing shows the
+// direction is exactly backwards, flip kInvertScrollWheel (one constant).
 constexpr bool kInvertScrollWheel = false;
+
+[[nodiscard]] bool wheelScrolledDown(short dy, schar buttonData) {
+    bool down;
+    if (dy != 0) {
+        down = (dy < 0);
+    } else if (buttonData == ::MouseAction::DataUp || buttonData == ::MouseAction::DataDown) {
+        down = (buttonData == ::MouseAction::DataDown);
+    } else {
+        down = (buttonData < 0);
+    }
+    return down != kInvertScrollWheel;
+}
 
 LL_AUTO_TYPE_INSTANCE_HOOK(
     ZoomGetFovHook,
@@ -68,8 +83,9 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
         // Wheel up zooms in, wheel down zooms out. The event is swallowed
         // so the hotbar does not scroll while adjusting zoom; every other
         // input (including the wheel when NOT zoomed) passes through.
-        const bool down = (buttonData == ::MouseAction::DataDown) != kInvertScrollWheel;
-        ZoomState::getInstance().addZoomSteps(down ? -1 : 1);
+        // Because zoom-out can never be misread as zoom-in (see
+        // wheelScrolledDown), scrolling back always escapes the maximum.
+        ZoomState::getInstance().addZoomSteps(wheelScrolledDown(dy, buttonData) ? -1 : 1);
         return;
     }
     origin(actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
