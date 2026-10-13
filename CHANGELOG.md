@@ -22,3 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release resets the scroll level to default (next zoom always 1.5x).
 - Zoom-depth look smoothing: sensitivity divides by zoom level with
   fractional accumulation.
+- Slow-pan grid-snapping fixed with a response curve: micro-movements
+  pass through 1:1 (regular rhythm feels smooth) while only fast motion
+  is damped. Residual note: output is whole pixels by nature of the
+  input path, so single-pixel steps remain faintly visible at extreme
+  magnification — that floor cannot go lower without camera access.

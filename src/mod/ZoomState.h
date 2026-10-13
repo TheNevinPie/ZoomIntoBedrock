@@ -65,17 +65,15 @@ public:
     // the heavier the smoothing (sensitivity divides by the zoom level,
     // so high magnification never feels twitchy). Sub-pixel fractions
     // accumulate across events so fine aim never freezes at high zoom.
+    // Micro-movements (<= kLinearRange raw pixels) pass through 1:1:
+    // holding back tiny inputs and releasing them as whole-pixel jumps
+    // is exactly what feels like snapping into a grid, so slow pans keep
+    // a regular every-event rhythm while only fast motion gets damped.
     // Call only while zoomed; unzoomed play passes through untouched.
     void scaleLookDelta(short dx, short dy, short& outX, short& outY) {
         const float factor = std::max(1.0F, mCurrentDivisor.load(std::memory_order_acquire));
-        float remX = mRemainderX.load(std::memory_order_acquire) + static_cast<float>(dx) / factor;
-        float remY = mRemainderY.load(std::memory_order_acquire) + static_cast<float>(dy) / factor;
-        const auto ox = static_cast<short>(remX); // truncates toward zero
-        const auto oy = static_cast<short>(remY);
-        mRemainderX.store(remX - static_cast<float>(ox), std::memory_order_release);
-        mRemainderY.store(remY - static_cast<float>(oy), std::memory_order_release);
-        outX = ox;
-        outY = oy;
+        outX = shapeAxis(dx, factor, mRemainderX);
+        outY = shapeAxis(dy, factor, mRemainderY);
     }
 
     static constexpr float kDefaultDivisor = 1.5F;
@@ -83,11 +81,29 @@ public:
     static constexpr float kMaxDivisor     = 30.0F;
 
 private:
+    static short shapeAxis(short d, float factor, std::atomic<float>& rem) {
+        const float in  = static_cast<float>(d);
+        const float mag = std::fabs(in);
+        float shaped;
+        if (factor <= 1.0F || mag <= kLinearRange) {
+            shaped = in;
+        } else {
+            const float s = (in > 0.0F) ? 1.0F : -1.0F;
+            shaped        = s * (kLinearRange + (mag - kLinearRange) / factor);
+        }
+        const float acc = rem.load(std::memory_order_acquire) + shaped;
+        const auto  o   = static_cast<short>(acc); // truncates toward zero
+        rem.store(acc - static_cast<float>(o), std::memory_order_release);
+        return o;
+    }
+
     // Per-wheel-tick multiplier (fine control), slow per-frame glide
     // toward the target, and a snap threshold so motion always settles.
     static constexpr float kScrollFactor  = 1.12F;
     static constexpr float kEasePerFrame  = 0.06F;
     static constexpr float kSnapThreshold = 0.005F;
+    // Raw-pixel inputs at or below this pass through undamped.
+    static constexpr float kLinearRange = 1.5F;
 
 private:
     ZoomState() = default;

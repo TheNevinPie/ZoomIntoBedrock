@@ -9,6 +9,8 @@ LeviLamina **client** mod (C++23).
 - Releasing `C` always resets to the default 1.5x for the next zoom.
 - Look sensitivity scales down with zoom depth (with sub-pixel
   accumulation, so fine aim never freezes at high magnification).
+  Tiny movements pass through undamped, so slow pans stay smooth
+  instead of snapping pixel-to-pixel; only fast motion is damped.
 - Scrolling is only redirected while zoomed; otherwise the hotbar scrolls normally.
 
 ## Build
