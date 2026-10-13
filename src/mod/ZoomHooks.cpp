@@ -24,6 +24,10 @@ namespace {
 
 constexpr float kMinSaneFov = 1.0F;
 constexpr float kMaxSaneFov = 179.0F;
+// Wheel direction convention (MouseAction::DataUp = scroll up = zoom in)
+// comes from the header enum names. If in-game testing shows inverted
+// behavior on some mouse, flip this one constant instead of touching logic.
+constexpr bool kInvertScrollWheel = false;
 
 LL_AUTO_TYPE_INSTANCE_HOOK(
     ZoomGetFovHook,
@@ -61,9 +65,11 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     bool        forceMotionlessPointer
 ) {
     if (actionButtonId == ::MouseAction::ActionWheel && ZoomState::getInstance().isZoomed()) {
-        // Wheel up zooms in, wheel down zooms out. Swallow so the hotbar
-        // does not scroll while adjusting zoom.
-        ZoomState::getInstance().addZoomSteps(buttonData == ::MouseAction::DataDown ? -1 : 1);
+        // Wheel up zooms in, wheel down zooms out. The event is swallowed
+        // so the hotbar does not scroll while adjusting zoom; every other
+        // input (including the wheel when NOT zoomed) passes through.
+        const bool down = (buttonData == ::MouseAction::DataDown) != kInvertScrollWheel;
+        ZoomState::getInstance().addZoomSteps(down ? -1 : 1);
         return;
     }
     origin(actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);

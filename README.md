@@ -3,8 +3,8 @@
 Hold-to-zoom camera for Minecraft Bedrock (Windows), as a native
 LeviLamina **client** mod (C++23).
 
-- **Hold `C`** to zoom (3x by default, remappable in Settings > Keyboard).
-- **Scroll** while zoomed to zoom further in/out (1.5x–30x, smooth).
+- **Hold `C`** to zoom (1.5x by default, remappable in Settings > Keyboard).
+- **Scroll** while zoomed to zoom further in/out (1.2x–30x, smooth glide).
 - Scrolling is only redirected while zoomed; otherwise the hotbar scrolls normally.
 
 ## Build
