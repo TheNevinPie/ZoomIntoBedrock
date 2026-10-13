@@ -51,9 +51,6 @@ public:
         mCurrentDivisor.store(current, std::memory_order_release);
         return current;
     }
-        mCurrentDivisor.store(current, std::memory_order_release);
-        return current;
-    }
 
     static constexpr float kDefaultDivisor = 1.5F;
     static constexpr float kMinDivisor     = 1.2F;
