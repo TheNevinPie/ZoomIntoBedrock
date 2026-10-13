@@ -79,14 +79,25 @@ LL_AUTO_TYPE_INSTANCE_HOOK(
     short       dy,
     bool        forceMotionlessPointer
 ) {
-    if (actionButtonId == ::MouseAction::ActionWheel && ZoomState::getInstance().isZoomed()) {
-        // Wheel up zooms in, wheel down zooms out. The event is swallowed
-        // so the hotbar does not scroll while adjusting zoom; every other
-        // input (including the wheel when NOT zoomed) passes through.
-        // Because zoom-out can never be misread as zoom-in (see
-        // wheelScrolledDown), scrolling back always escapes the maximum.
-        ZoomState::getInstance().addZoomSteps(wheelScrolledDown(dy, buttonData) ? -1 : 1);
-        return;
+    if (ZoomState::getInstance().isZoomed()) {
+        if (actionButtonId == ::MouseAction::ActionWheel) {
+            // Wheel up zooms in, wheel down zooms out. The event is
+            // swallowed so the hotbar does not scroll while adjusting
+            // zoom. Because zoom-out can never be misread as zoom-in
+            // (see wheelScrolledDown), scrolling back always escapes
+            // the maximum.
+            ZoomState::getInstance().addZoomSteps(wheelScrolledDown(dy, buttonData) ? -1 : 1);
+            return;
+        }
+        if (actionButtonId == ::MouseAction::ActionMove || actionButtonId == ::MouseAction::ActionMoveRelative) {
+            // Look smoothing that deepens with zoom: sensitivity divides
+            // by the zoom level, so high magnification never feels
+            // twitchy. Unzoomed input never reaches this branch.
+            short sx = 0, sy = 0;
+            ZoomState::getInstance().scaleLookDelta(dx, dy, sx, sy);
+            origin(actionButtonId, buttonData, x, y, sx, sy, forceMotionlessPointer);
+            return;
+        }
     }
     origin(actionButtonId, buttonData, x, y, dx, dy, forceMotionlessPointer);
 }

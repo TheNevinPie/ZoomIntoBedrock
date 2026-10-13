@@ -19,3 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DataUp`/`DataDown`, or signed data magnitude, so zoom-out can never
   be misread as zoom-in (previous code only read the data flag and
   could wedge at maximum). `kInvertScrollWheel` escape hatch kept.
+- Release resets the scroll level to default (next zoom always 1.5x).
+- Zoom-depth look smoothing: sensitivity divides by zoom level with
+  fractional accumulation.

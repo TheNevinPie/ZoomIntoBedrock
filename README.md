@@ -6,6 +6,9 @@ LeviLamina **client** mod (C++23).
 - **Hold `C`** to zoom (1.5x by default, remappable in Settings > Keyboard).
 - **Scroll** while zoomed to zoom further in/out (1.2x–30x). Zoom
   transitions are a slow smooth glide, including the zoom-out on release.
+- Releasing `C` always resets to the default 1.5x for the next zoom.
+- Look sensitivity scales down with zoom depth (with sub-pixel
+  accumulation, so fine aim never freezes at high magnification).
 - Scrolling is only redirected while zoomed; otherwise the hotbar scrolls normally.
 
 ## Build
